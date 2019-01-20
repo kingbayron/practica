@@ -38,48 +38,48 @@ int main(int argc, char* argv[]){
 		while(ptr != NULL){		
 			if(strcmp(ptr,"Nodes")==0){
 				ptr = strtok(NULL, " ");
-				nodos=atoi(ptr);
+				nodos=atoi(ptr);										// ingreso numero de nodos a la variable
 				cout<<"Existen este nuemro de nodos "<<nodos<<endl;
 			}
 			ptr = strtok(NULL, " ");
 		}
-		getline(archivo,linea);
+		getline(archivo,linea);											//obtencion nueva linea de archivo
 		strcpy(linea1,linea.c_str());
 		ptr = strtok(linea1," ");
 		while(ptr != NULL){
 			if(strcmp(ptr,"Clusters")==0){
 				ptr = strtok(NULL, " ");
-				clusters=atoi(ptr);
+				clusters=atoi(ptr);										//ingreso numero de cluster a variable
 				cout<<"Existen este nuemro de clusters "<<clusters<<endl;
 			}
 			ptr = strtok(NULL, " ");
 		}
 		cout<<"----------------------"<<endl;
-		double precios[nodos][nodos];
-		Pokeparada pokeparadas[nodos];
-		for (int i = 0; i < nodos; i++) {
+		double precios[nodos][nodos];									// matriz de precios de viajar de un nodo a otro
+		Pokeparada pokeparadas[nodos];									// arreglo de Struct Pokeparada
+		for (int i = 0; i < nodos; i++) {								// ingreso Struct a Arreglo "pokeparada"
 			getline(archivo,linea);
 			strcpy(linea1,linea.c_str());
 			ptr = strtok(linea1," ");
 			ptr = strtok(NULL, " ");
-			id=atoi(ptr);
+			id=atoi(ptr);												// id struct
 			ptr = strtok(NULL, " ");
-			clust=atoi(ptr);
+			clust=atoi(ptr);											// cluster struc
 			ptr = strtok(NULL, " ");
 			pokeparada=atoi(ptr);
-			Pokeparada a;
-			a.id=id;
+			Pokeparada a;												// beneficios Struct
+			a.id=id;													//ingreso de variables a struct
 			a.cluster=clust;
 			a.beneficios=pokeparada;
-			pokeparadas[i]=a;
+			pokeparadas[i]=a;											// ingreso struct a Arreglo de struct
 		}
-		for (int j = 0; j < nodos; j++) {
+		for (int j = 0; j < nodos; j++) {								// imprime arreglo de struct pokeparada con id, cluster al que pertenece y beneficios
 			cout<<"La pokepara numero "<<pokeparadas[j].id<<endl;
 			cout<<"Pertenece al cluster "<< pokeparadas[j].cluster<<endl;
 			cout<<"Tiene unos beneficios de "<<pokeparadas[j].beneficios<<endl;
 			cout<<"----------------------------------"<<endl;
 		}
-		while(!archivo.eof()){
+		while(!archivo.eof()){											// lectura de archivpo para obtencion de costos deviaje entre nodos
 			getline(archivo,linea);
 			if(linea.empty()){
 				break;
@@ -87,15 +87,15 @@ int main(int argc, char* argv[]){
 			strcpy(linea1,linea.c_str());
 			ptr = strtok(linea1," ");
 			ptr = strtok(NULL, " ");
-			x=atoi(ptr);
+			x=atoi(ptr);												// obtencion coordenada x (nodo partida)
 			ptr = strtok(NULL, " ");
-			y=atoi(ptr);
+			y=atoi(ptr);												// obtencion coordenada y (nodo llegada)
 			ptr = strtok(NULL, " ");
-			costo=atof(ptr);
-			precios[x][y]=costo;
-			precios[y][x]=costo;
+			costo=atof(ptr);											// obtencion costo viaje
+			precios[x][y]=costo;										// ingreso costo a la matriz con x,y /partida, llegada
+			precios[y][x]=costo;										// ingreso costo a matriz con y, x / llegada, partida
 		}
-		for (int i = 0; i < nodos; i++) {
+		for (int i = 0; i < nodos; i++) {								// imprimir matriz de costos
 			precios[i][i]=0;
 			for (int j = 0; j < nodos; j++) {
 				cout<<precios[i][j]<<" ";
