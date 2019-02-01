@@ -12,7 +12,7 @@ using std::vector;
 using std::cout;
 using std::endl;
 using std::list;
-struct Pokeparada{ //estructura
+struct Pokeparada{ 														//estructura
 	int id;
 	int cluster;
 	int beneficios;
@@ -25,71 +25,71 @@ void imprimirvector(vector<Pokeparada> a){
 		cout<<"----------------------------------"<<endl;
 	}
 }
-double costoviaje(vector<Pokeparada> a,vector< vector<double>> matrix){
-	double costo;
+double costoviaje(vector<Pokeparada> a,vector< vector<double>> matrix){ //calcula costo de un vector de estructura sumando el valor de un punto a otro
+	double costo;														
 	int anterior,siguiente;
-	anterior=a[0].id;
-	for (int i = 1; i < a.size(); ++i){
-		siguiente=a[i].id;
-		costo=costo+matrix[anterior][siguiente];
-		anterior=siguiente;
+	anterior=a[0].id;													//primer nodo del tour
+	for (int i = 1; i < a.size(); ++i){									// evalua los costos desde el primer nodo con el segundo, el segundo con el tercero....y n-1 con n
+		siguiente=a[i].id;												//asignacion de siguiente (sigueitne nodo a anterior )
+		costo=costo+matrix[anterior][siguiente];						//suma de costos
+		anterior=siguiente;												//nodo sigueinte pasa a ser anterior 
 	}
 	return costo;
 }
-void imprimirsolucion(vector<Pokeparada> a){
+void imprimirsolucion(vector<Pokeparada> a){							// imprime id de vector de struct
 	for (int i = 0; i < a.size(); ++i){
 		cout<<a[i].id<<" ";
 	}
 	cout<<endl;
 }
-vector<Pokeparada> eliminarnodo(vector<Pokeparada>b, int id){
-	for (int i = 0; i < b.size(); i++){
+vector<Pokeparada> eliminarnodo(vector<Pokeparada>b, int id){			//elimina nodo de un vector de struct
+	for (int i = 0; i < b.size(); i++){									//busca id que se desea eleminar
 		if(b[i].id==id){
-			b.erase(b.begin()+i);
+			b.erase(b.begin()+i);										//elimina nodo 
 			break;
 		}
 	}
 	return b;
 }
-int idmenorvalor(vector<Pokeparada> a, int nodoactual,vector< vector<double>> matrix){
+int idmenorvalor(vector<Pokeparada> a, int nodoactual,vector< vector<double>> matrix){		//busca el nodo con menor costo desde nodo actual 
 	double nodomenor;
 	int valor;
-	valor=matrix[nodoactual][a[0].id];
-	nodomenor=a[0].id;
-	if(a.size()>1){
-		for (int i = 1; i < a.size(); ++i)	{
-			if(valor>matrix[nodoactual][a[i].id]){
-				valor=matrix[nodoactual][a[i].id];
-				nodomenor=a[i].id;
+	valor=matrix[nodoactual][a[0].id];														// costo desde nodo actual al primer nodo de vector de struct(primer nodo de os nodos que van quedando)
+	nodomenor=a[0].id;																		//nodo menor va a ser en un principio el primer nodo del vector de struct(nodos que van quedando)
+	if(a.size()>1){																			// si exsiste mas de un nodo se busca el que tiene menor costo sino seria el nodo que queda
+		for (int i = 1; i < a.size(); ++i)	{												// se evalua el nodo con menor costo desde nodo actual al nodo i
+			if(valor>matrix[nodoactual][a[i].id]){											// si valor es mayor que el costo desde nodo actual al nodo i 
+				valor=matrix[nodoactual][a[i].id];											// valor pasa a ser el costo desde el nodo actual al nodo i 
+				nodomenor=a[i].id;															// y nodo menor pasa a ser el nodo i
 			}
 		}
-		return nodomenor;
+		return nodomenor;																	//retorna el id del nodo menor
 	}else{
 		return nodomenor;
 	}
 }
-int nodomenorvaor(vector<Pokeparada> a,int idmenor){
+int nodomenorvaor(vector<Pokeparada> a,int idmenor){										// busca la posicion en el vector de struct donde se encuentra el id 										
 	for (int i = 0; i <a.size() ; ++i){
 		if(a[i].id==idmenor){
-			return i;
+			return i;																		// retorna la posicion del nodo con id(idmenor) del vector
 		}
 	}
 }
-vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,vector< vector<double>> matrix){
-	vector<Pokeparada> ids=a;
-	vector<Pokeparada> solucion;
-	int idactual,next;
-	idactual=nodoinicio;
-	solucion.push_back(a[idactual]);
-	ids=eliminarnodo(ids,idactual);
-	while(ids.size()!=0){
-		idactual=idmenorvalor(ids,idactual,matrix);
-		next=nodomenorvaor(ids,idactual);
-		solucion.push_back(ids[next]);
-		ids.erase(ids.begin()+next);
+vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,vector< vector<double>> matrix){ // algoritmo para una primera aproximacion del problema
+	vector<Pokeparada> ids=a;																	// copia de vector de struct
+	vector<Pokeparada> solucion;																// solucion de greedy, inicia vacia
+	int idactual,next;	
+	idactual=nodoinicio;																		// id actual es igual al nodo que se entrega en el programa, desde donde se parte
+	solucion.push_back(a[idactual]);															// se le agrega a solicon el nodo de partida
+	ids=eliminarnodo(ids,idactual);																// se elimina de ids el nodo de partida
+	while(ids.size()!=0){																		// mientras el vector de struct tenga nodos se precede al algoritmo
+		idactual=idmenorvalor(ids,idactual,matrix);												// se busca el nodo(id) con menor distancia desde id actual
+		next=nodomenorvaor(ids,idactual);														// se busca la posicion del nodo/ id con menor costo desde id actual
+		solucion.push_back(ids[next]);															// se agrega a solucion el nodo que esta en la posicion con menor costo
+		ids.erase(ids.begin()+next);															// se elimina de ids(la copia de vectores) el nodo recien agregado a la solucion
 	}
-	solucion.push_back(a[nodoinicio]);
-	return solucion;
+	solucion.push_back(a[nodoinicio]);															// se agrega el nodo inicial a solucion para terminar el recorrido
+	return solucion;																			//retorna solucion
 
 }
 int main(int argc, char* argv[]){									
@@ -175,10 +175,9 @@ int main(int argc, char* argv[]){
 			precio.erase(precio.begin(),precio.begin()+precio.size());	// borrado de vector de double para reiniciar ingreso
 		}
 		cout<<"\nSolucion algoritmo greedy vecino mas cercano\n"<<endl;
-		vector<Pokeparada> solucion=greedy(pokeparadas,atoi(argv[2]) ,vecotorcosotos);
-		imprimirsolucion(solucion);
+		vector<Pokeparada> solucion=greedy(pokeparadas,atoi(argv[2]) ,vecotorcosotos);// busqueda de primera solucion con algoritmo greddy
 		cout<<"\nCosto del viaje\n"<<endl;
-		costo=costoviaje(solucion,vecotorcosotos);
+		costo=costoviaje(solucion,vecotorcosotos);						// calculo de costo de viaje de la solucion
 		cout<<costo<<endl;
 		return 0;
 	}
