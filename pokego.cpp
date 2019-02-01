@@ -25,7 +25,7 @@ void imprimirvector(vector<Pokeparada> a){
 		cout<<"----------------------------------"<<endl;
 	}
 }
-double costoviaje(vector<Pokeparada> a,double matrix[493][493]){
+double costoviaje(vector<Pokeparada> a,vector< vector<double>> matrix){
 	double costo;
 	int anterior,siguiente;
 	anterior=a[0].id;
@@ -51,7 +51,7 @@ vector<Pokeparada> eliminarnodo(vector<Pokeparada>b, int id){
 	}
 	return b;
 }
-int idmenorvalor(vector<Pokeparada> a, int nodoactual, double matrix[493][493]){
+int idmenorvalor(vector<Pokeparada> a, int nodoactual,vector< vector<double>> matrix){
 	double nodomenor;
 	int valor;
 	valor=matrix[nodoactual][a[0].id];
@@ -75,7 +75,7 @@ int nodomenorvaor(vector<Pokeparada> a,int idmenor){
 		}
 	}
 }
-vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,double matrix[493][493]){
+vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,vector< vector<double>> matrix){
 	vector<Pokeparada> ids=a;
 	vector<Pokeparada> solucion;
 	int idactual,next;
@@ -92,9 +92,9 @@ vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,double matrix[493
 	return solucion;
 
 }
-int main(int argc, char* argv[]){									// for lectura multiples archivos tsp
+int main(int argc, char* argv[]){									
 		cout<<"Se esta estudiando el archivo "<<argv[1]<< endl;			// archivo que e leera en ese omento
-		string linea,arbol;													// string para lectura archivo
+		string linea,arbol;												// string para lectura archivo
 		int nodos;														// numero de nodos
 		int clusters;													// numero de clusters
 		char linea1[100];												// arreglo de caracteres para el uso de tokenizar
@@ -148,6 +148,8 @@ int main(int argc, char* argv[]){									// for lectura multiples archivos tsp
 			a.beneficios=pokeparada;
 			pokeparadas.push_back(a);									// ingreso struct a vector de struct
 		}
+		vector< vector<double>> vecotorcosotos;							//vector de vectores de double
+    	vector<double> precio;											//vector de double
 		imprimirvector(pokeparadas);
 		while(!archivo.eof()){											// lectura de archivpo para obtencion de costos deviaje entre nodos
 			getline(archivo,linea);
@@ -165,18 +167,18 @@ int main(int argc, char* argv[]){									// for lectura multiples archivos tsp
 			precios[x][y]=costo;										// ingreso costo a la matriz con x,y /partida, llegada
 			precios[y][x]=costo;										// ingreso costo a matriz con y, x / llegada, partida
 		}
-		for (int i = 0; i < nodos; i++) {								// imprimir matriz de costos
-			precios[i][i]=0;
-			for (int j = 0; j < nodos; j++) {
-				cout<<precios[i][j]<<" ";
+		for (int i = 0; i < nodos; ++i){								// algoritmo para psar de matriz a vector de vectores de double
+			for (int j = 0; j < nodos; ++j){
+				precio.push_back(precios[i][j]);						// ingreso de valores a vector de double
 			}
-			cout<<endl;
+			vecotorcosotos.push_back(precio);							// ingreso de vector de double a vector
+			precio.erase(precio.begin(),precio.begin()+precio.size());	// borrado de vector de double para reiniciar ingreso
 		}
 		cout<<"\nSolucion algoritmo greedy vecino mas cercano\n"<<endl;
-		vector<Pokeparada> solucion=greedy(pokeparadas,atoi(argv[2]) ,precios);
+		vector<Pokeparada> solucion=greedy(pokeparadas,atoi(argv[2]) ,vecotorcosotos);
 		imprimirsolucion(solucion);
-		cout<<"\n Costo del viaje\n"<<endl;
-		costo=costoviaje(solucion,precios);
+		cout<<"\nCosto del viaje\n"<<endl;
+		costo=costoviaje(solucion,vecotorcosotos);
 		cout<<costo<<endl;
 		return 0;
 	}
