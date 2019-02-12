@@ -1,12 +1,13 @@
 #include <iostream>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <fstream>
 #include <string.h>
 #include <vector>
 #include <list>
-#include<time.h>
+#include<cmath>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 using std::vector;
 using std::cout;
@@ -92,6 +93,142 @@ vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,vector< vector<do
 	return solucion;																			//retorna solucion
 
 }
+void printVec(vector<int> vect){
+    ///imprime vector
+	for(int i = 0; i < vect.size(); i++)
+		cout<<vect[i]<<" ";
+	cout<<endl;
+}
+void printVect(vector<double> vect){
+    ///imprime vector
+	for(int i = 0; i < vect.size(); i++)
+		cout<<vect[i]<<" ";
+	cout<<endl;
+}
+vector<int> shuffle(vector<int> a) {
+	vector<int> vect=a;
+	int inicio, fin;
+	inicio = 1+rand()%(a.size()-2);
+	fin = 1+rand()%(a.size()-2);
+    //cout<<inicio<<" "<<fin<<endl;
+	swap(vect[inicio],vect[fin]);
+	//printVec(vect);
+	return vect;
+}
+
+bool metropolis(int fx, int fx1, double T){
+    /**
+    * Calcula el valor de la distribución de boltzman
+    * para obtener el resultado del paso de metropolis.
+    */
+	double boltzman;
+	boltzman = exp(-1*(fx1-fx)/T);
+	if(boltzman < rand()/RAND_MAX)
+		return false;
+	return true;
+}
+double calculaValor(vector<int> vect,vector<vector<double> > ciudades){
+	double costo;														
+	int anterior,siguiente;
+	anterior=vect[0];													//primer nodo del tour
+	for (int i = 1; i < vect.size(); ++i){									// evalua los costos desde el primer nodo con el segundo, el segundo con el tercero....y n-1 con n
+		siguiente=vect[i];												//asignacion de siguiente (sigueitne nodo a anterior )
+		costo=costo+ciudades[anterior][siguiente];						//suma de costos
+		anterior=siguiente;												//nodo sigueinte pasa a ser anterior 
+	}
+	return costo;
+}
+
+vector<int> simulated(vector<int> vect,double Temp,double converg,vector<vector<double> > ciudades){
+	vector<int> probable,actual;
+	double T=Temp;
+	double v_cong=converg;
+	int v_actual,v_probable;
+    //Obtenemos una solución inicial
+	probable=shuffle(vect);
+	actual=probable;
+	v_actual=calculaValor(actual,ciudades);
+	do{
+        //Obtenemos una nueva solucion aleatoria
+		probable=actual;
+		probable=shuffle(probable);
+        //Obtenemos el costo de la solucion candidato
+		v_probable = calculaValor(probable,ciudades);
+		if(v_actual > v_probable){
+			actual=probable;
+			v_actual = v_probable;
+			probable=actual;
+		}
+		else if(metropolis(v_actual,v_probable,T)){
+			actual=probable;
+			v_actual = v_probable;
+			probable=actual;
+		}
+        //Disminuimos T
+		T=T*0.99;
+	}while(T>v_cong);
+	return actual;
+}
+vector<int> realsimu(vector<int> vect,double Temp,double converg,vector<vector<double> > ciudades){
+	vector<int> actual,probable,inicio;
+	actual=vect;
+	inicio=actual;
+	probable=actual;
+	double v_actual,v_probable;
+	int T=Temp;
+	v_probable=calculaValor(actual,ciudades);
+	for (int i = 0; i < 100; ++i){
+		actual=simulated(actual,Temp,converg,ciudades);
+		v_actual=calculaValor(actual,ciudades);
+		if(v_actual<v_probable){
+			probable=actual;
+			v_probable=v_actual;
+		}
+		actual=vect;
+		T=Temp;
+	}
+	return probable;
+
+}
+vector<int> structaint(vector<Pokeparada> a){
+	vector<int> b;
+	for (int i = 0; i < a.size(); ++i){
+		b.push_back(a[i].id);
+	}
+	return b;
+}
+vector<double> costosprom(vector<vector<double> > a,int b){
+	double costoprom;
+	vector<double> cost;
+	for (int i = 0; i < a.size(); ++i){
+		for (int j = 0; j < a.size(); ++j){
+			costoprom=costoprom+a[i][j];
+		}
+		costoprom=(costoprom/(a.size()-1));
+		cost.push_back(costoprom);
+	}
+	cost[b]=0;
+	return cost;
+}
+int idcostopromayor(vector<double> a){
+	double b=0;
+	int id;
+	for (int i = 0; i < a.size(); ++i){
+		if(a[i]>b){
+			b=a[i];
+			id=i;
+		}
+	}
+	return id;
+}
+int aidi(vector<int> a, int id){
+	for (int i = 0; i < a.size(); ++i){
+		if(id==a[i]){
+			return i;
+		}
+	}
+}
+
 int main(int argc, char* argv[]){									
 		cout<<"Se esta estudiando el archivo "<<argv[1]<< endl;			// archivo que e leera en ese omento
 		string linea,arbol;												// string para lectura archivo
@@ -150,7 +287,7 @@ int main(int argc, char* argv[]){
 		}
 		vector< vector<double>> vecotorcosotos;							//vector de vectores de double
     	vector<double> precio;											//vector de double
-		imprimirvector(pokeparadas);
+    	imprimirvector(pokeparadas);
 		while(!archivo.eof()){											// lectura de archivpo para obtencion de costos deviaje entre nodos
 			getline(archivo,linea);
 			if(linea.empty()){
@@ -176,8 +313,36 @@ int main(int argc, char* argv[]){
 		}
 		cout<<"\nSolucion algoritmo greedy vecino mas cercano\n"<<endl;
 		vector<Pokeparada> solucion=greedy(pokeparadas,atoi(argv[2]) ,vecotorcosotos);// busqueda de primera solucion con algoritmo greddy
+		imprimirsolucion(solucion);
 		cout<<"\nCosto del viaje\n"<<endl;
 		costo=costoviaje(solucion,vecotorcosotos);						// calculo de costo de viaje de la solucion
 		cout<<costo<<endl;
+		vector<int> nuevasolucion=structaint(solucion);
+		double T = 3906290;
+    //v_cong es el valor de congelacion, que marca
+    //el final del algoritmo
+		double v_cong = 0.05;
+		nuevasolucion=realsimu(nuevasolucion,T,v_cong,vecotorcosotos);
+		//double v_probable=calculaValor(nuevasolucion,vecotorcosotos);
+		double nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
+		vector<double> costospromedios=costosprom(vecotorcosotos,atoi(argv[2]));
+		while(nuevocosto>atof(argv[3])){
+			int idcos=idcostopromayor(costospromedios);
+			int aidis=aidi(nuevasolucion,idcos);
+			nuevasolucion.erase(nuevasolucion.begin()+aidis);
+			if(nuevasolucion.size()==2){
+				cout<<"No existe solucion"<<endl;
+				exit(-1);
+			}
+			costospromedios[idcos]=0;
+			nuevasolucion=realsimu(nuevasolucion,T,v_cong,vecotorcosotos);
+			printVec(nuevasolucion);
+			nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
+			cout<<"costo del camino "<<nuevocosto<<endl;	
+		}
+		cout<<"La solucion optima es: ";
+		printVec(nuevasolucion);
+		nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
+		cout<<"Con el siguiente costo en distancia: "<<nuevocosto<<endl;
 		return 0;
 	}
