@@ -1,18 +1,23 @@
 #include <iostream>
 #include <stdbool.h>
+#include <utility>
 #include <stdio.h>
+#include <iomanip>
 #include <fstream>
 #include <string.h>
 #include <vector>
-#include <list>
+#include <map>
 #include<cmath>
 #include <cstdlib>
 #include <ctime>
 using namespace std;
 using std::vector;
+using std::map;
 using std::cout;
 using std::endl;
-using std::list;
+unsigned t0,t1;
+typedef pair<int, vector<int> > par;
+typedef pair<int, int > parint;
 struct Pokeparada{ 														//estructura
 	int id;
 	int cluster;
@@ -177,7 +182,7 @@ vector<int> realsimu(vector<int> vect,double Temp,double converg,vector<vector<d
 	double v_actual,v_probable;
 	int T=Temp;
 	v_probable=calculaValor(actual,ciudades);
-	for (int i = 0; i < 100; ++i){
+	for (int i = 0; i < 1000; ++i){
 		actual=simulated(actual,Temp,converg,ciudades);
 		v_actual=calculaValor(actual,ciudades);
 		if(v_actual<v_probable){
@@ -228,8 +233,72 @@ int aidi(vector<int> a, int id){
 		}
 	}
 }
+map<int,vector<int> > cluster(int numcluster,vector<Pokeparada> b){
+	map<int, vector<int> > clusters;
+	vector<int> a;
+	for (int i = 0; i < numcluster; ++i){
+		clusters.insert(par(i,a));
+	}
+	for (int i = 0; i < b.size() ; ++i){
+		clusters[b[i].cluster].push_back(b[i].id);
+	}
+	return clusters;
 
-int main(int argc, char* argv[]){									
+}
+map<int,int> mapaverif(int numcluster){
+	map<int,int> a;
+	for (int i = 0; i < numcluster; ++i){
+		a.insert(parint(i,0));
+	}
+	return a;
+}
+map<int,int> clustervisitado(int id, map<int,int> b){
+	map<int,int> a=b;
+	if(a[id]==0){
+		a[id]=1;
+	}
+	return a;
+}
+bool verificacionclusters(map<int,int>a){
+	int b=0;
+	for (int i = 0; i < a.size(); ++i){
+		if(a[i]==1){
+			b=b+1;
+		}
+		if(b==a.size()){
+			return true;
+		}
+	}
+	return false;
+}
+int valorenmapa(int a,map<int,vector<int> > b){
+	map<int, vector<int> >::iterator p = b.begin();
+		while (p != b.end() ){
+			for (int i = 0; i < p->second.size(); ++i){
+				if(p->second[i]==a){
+					return p->first;
+				}
+			}
+			p++;
+		}
+}
+bool recorridocontodoslosclusters(vector<int> a, map<int,vector<int> > b, map<int,int>c){
+	map<int,int> mapa=c;
+	for (int i = 0; i < a.size(); ++i){
+		mapa=clustervisitado(valorenmapa(a[i],b),mapa);
+		if(verificacionclusters(mapa)==1){
+			return true;
+		}
+	}
+	if(verificacionclusters(mapa)==1){
+		return true;
+	}else{
+		return false;
+	}
+}
+
+int main(int argc, char* argv[]){
+		t0=clock();									
 		cout<<"Se esta estudiando el archivo "<<argv[1]<< endl;			// archivo que e leera en ese omento
 		string linea,arbol;												// string para lectura archivo
 		int nodos;														// numero de nodos
@@ -261,7 +330,7 @@ int main(int argc, char* argv[]){
 		while(ptr != NULL){
 			if(strcmp(ptr,"Clusters")==0){
 				ptr = strtok(NULL, " ");
-				clusters=atoi(ptr);										//ingreso numero de cluster a variable
+				clusters=atoi(ptr)+1;										//ingreso numero de cluster a variable
 				cout<<"Existen este nuemro de clusters "<<clusters<<endl;
 			}
 			ptr = strtok(NULL, " ");
@@ -311,6 +380,8 @@ int main(int argc, char* argv[]){
 			vecotorcosotos.push_back(precio);							// ingreso de vector de double a vector
 			precio.erase(precio.begin(),precio.begin()+precio.size());	// borrado de vector de double para reiniciar ingreso
 		}
+		map<int,vector<int> > mapaclusters = cluster(clusters,pokeparadas);
+		map<int,int> mapaverificacion=mapaverif(clusters);
 		cout<<"\nSolucion algoritmo greedy vecino mas cercano\n"<<endl;
 		vector<Pokeparada> solucion=greedy(pokeparadas,atoi(argv[2]) ,vecotorcosotos);// busqueda de primera solucion con algoritmo greddy
 		imprimirsolucion(solucion);
@@ -318,13 +389,37 @@ int main(int argc, char* argv[]){
 		costo=costoviaje(solucion,vecotorcosotos);						// calculo de costo de viaje de la solucion
 		cout<<costo<<endl;
 		vector<int> nuevasolucion=structaint(solucion);
+		bool verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
+		if(verdad==0){
+			cout<<"no recorre todos los clusters"<<endl;
+		}
+		if(verdad==1){
+			cout<<"recorre todos los clusters"<<endl;
+		}
 		double T = 3906290;
     //v_cong es el valor de congelacion, que marca
     //el final del algoritmo
 		double v_cong = 0.05;
+		if(costo<atof(argv[3])){
+			t1=clock();
+			double time = (double(t1-t0)/CLOCKS_PER_SEC);
+			cout << "Execution Time: " << time << endl;
+			exit(-1);
+		}
 		nuevasolucion=realsimu(nuevasolucion,T,v_cong,vecotorcosotos);
 		//double v_probable=calculaValor(nuevasolucion,vecotorcosotos);
 		double nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
+		cout<<"solucion simulated aneling"<<endl;
+		printVec(nuevasolucion);
+		cout<<"Costo solucion"<<endl;
+		cout<<nuevocosto<<endl;
+		verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
+		if(verdad==0){
+			cout<<"no recorre todos los clusters"<<endl;
+		}
+		if(verdad==1){
+			cout<<"recorre todos los clusters"<<endl;
+		}
 		vector<double> costospromedios=costosprom(vecotorcosotos,atoi(argv[2]));
 		while(nuevocosto>atof(argv[3])){
 			int idcos=idcostopromayor(costospromedios);
@@ -338,11 +433,47 @@ int main(int argc, char* argv[]){
 			nuevasolucion=realsimu(nuevasolucion,T,v_cong,vecotorcosotos);
 			printVec(nuevasolucion);
 			nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
-			cout<<"costo del camino "<<nuevocosto<<endl;	
+			cout<<"costo del camino "<<nuevocosto<<endl;
+			verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
+			if(verdad==0){
+				cout<<"no recorre todos los clusters"<<endl;
+			}
+			if(verdad==1){
+				cout<<"recorre todos los clusters"<<endl;
+			}	
 		}
 		cout<<"La solucion optima es: ";
 		printVec(nuevasolucion);
 		nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
 		cout<<"Con el siguiente costo en distancia: "<<nuevocosto<<endl;
+		verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
+		if(verdad==0){
+			cout<<"no recorre todos los clusters"<<endl;
+		}
+		if(verdad==1){
+			cout<<"recorre todos los clusters"<<endl;
+		}
+		/*map<int, vector<int> >::iterator p = mapaclusters.begin();
+		while (p != mapaclusters.end() )
+		{
+			cout << setw(10) << p->first << setw(10); 
+			for (int i = 0; i < p->second.size(); ++i){
+				cout<<p->second[i]<<" ";
+			};
+			cout<<endl;
+			p++;
+		}
+		cout<<endl;
+
+		map<int, int>::iterator q = mapaverificacion.begin();
+		while (q != mapaverificacion.end() )
+		{
+			cout << setw(10) << q->first << setw(10) << q->second; 
+			cout<<endl;
+			q++;
+		}*/
+		t1=clock();
+		double time = (double(t1-t0)/CLOCKS_PER_SEC);
+		cout << "Execution Time: " << time <<" Segundos"<< endl;
 		return 0;
 	}

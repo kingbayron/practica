@@ -1,5 +1,5 @@
 Nodes 16
-Clusters 5
+Clusters 4
 V 0 0 38
 V 1 4 40
 V 2 4 41
