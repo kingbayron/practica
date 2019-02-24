@@ -1,15 +1,16 @@
 #include <iostream>
+#include <fstream>
 #include <stdbool.h>
 #include <utility>
 #include <stdio.h>
 #include <iomanip>
-#include <fstream>
 #include <string.h>
 #include <vector>
 #include <map>
 #include<cmath>
 #include <cstdlib>
 #include <ctime>
+#include<sys/stat.h>
 using namespace std;
 using std::vector;
 using std::map;
@@ -81,6 +82,37 @@ int nodomenorvaor(vector<Pokeparada> a,int idmenor){										// busca la posici
 		}
 	}
 }
+int idmenorvalor2(vector<int> a, int nodoactual,vector< vector<double>> matrix){		//busca el nodo con menor costo desde nodo actual 
+	double nodomenor;
+	int valor;
+	valor=matrix[nodoactual][a[0]];														// costo desde nodo actual al primer nodo de vector de struct(primer nodo de os nodos que van quedando)
+	nodomenor=a[0];																		//nodo menor va a ser en un principio el primer nodo del vector de struct(nodos que van quedando)
+	if(a.size()>1){																			// si exsiste mas de un nodo se busca el que tiene menor costo sino seria el nodo que queda
+		for (int i = 1; i < a.size(); ++i)	{												// se evalua el nodo con menor costo desde nodo actual al nodo i
+			if(valor>matrix[nodoactual][a[i]]){											// si valor es mayor que el costo desde nodo actual al nodo i 
+				valor=matrix[nodoactual][a[i]];											// valor pasa a ser el costo desde el nodo actual al nodo i 
+				nodomenor=a[i];															// y nodo menor pasa a ser el nodo i
+			}
+		}
+		return nodomenor;																	//retorna el id del nodo menor
+	}else{
+		return nodomenor;
+	}
+}
+int aidi(vector<int> a, int id){
+	for (int i = 0; i < a.size(); ++i){
+		if(id==a[i]){
+			return i;
+		}
+	}
+}
+int nodomenorvaor2(vector<int> a,int idmenor){										// busca la posicion en el vector de struct donde se encuentra el id 										
+	for (int i = 0; i <a.size() ; ++i){
+		if(a[i]==idmenor){
+			return i;																		// retorna la posicion del nodo con id(idmenor) del vector
+		}
+	}
+}
 vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,vector< vector<double>> matrix){ // algoritmo para una primera aproximacion del problema
 	vector<Pokeparada> ids=a;																	// copia de vector de struct
 	vector<Pokeparada> solucion;																// solucion de greedy, inicia vacia
@@ -98,12 +130,30 @@ vector<Pokeparada> greedy(vector<Pokeparada> a, int nodoinicio,vector< vector<do
 	return solucion;																			//retorna solucion
 
 }
+vector<int> greddy2(vector<int>a,int nodoinicio,vector< vector<double>> matrix){
+	vector<int> aux=a;
+	aux.erase(aux.begin()+(aux.size()-1));
+	vector<int>solucion;
+	int idactual,next;
+	idactual=nodoinicio;
+	solucion.push_back(idactual);
+	aux.erase(aux.begin()+idactual);
+	while(aux.size()!=0){																		// mientras el vector de struct tenga nodos se precede al algoritmo
+		idactual=idmenorvalor2(aux,idactual,matrix);												// se busca el nodo(id) con menor distancia desde id actual
+		next=nodomenorvaor2(aux,idactual);														// se busca la posicion del nodo/ id con menor costo desde id actual
+		solucion.push_back(aux[next]);															// se agrega a solucion el nodo que esta en la posicion con menor costo
+		aux.erase(aux.begin()+next);															// se elimina de ids(la copia de vectores) el nodo recien agregado a la solucion
+	}
+	solucion.push_back(a[nodoinicio]);															// se agrega el nodo inicial a solucion para terminar el recorrido
+	return solucion;
+}
 void printVec(vector<int> vect){
     ///imprime vector
 	for(int i = 0; i < vect.size(); i++)
 		cout<<vect[i]<<" ";
 	cout<<endl;
 }
+
 void printVect(vector<double> vect){
     ///imprime vector
 	for(int i = 0; i < vect.size(); i++)
@@ -133,6 +183,9 @@ bool metropolis(int fx, int fx1, double T){
 	return true;
 }
 double calculaValor(vector<int> vect,vector<vector<double> > ciudades){
+	if(vect.size()==0){
+		return 0;
+	}
 	double costo;														
 	int anterior,siguiente;
 	anterior=vect[0];													//primer nodo del tour
@@ -142,6 +195,13 @@ double calculaValor(vector<int> vect,vector<vector<double> > ciudades){
 		anterior=siguiente;												//nodo sigueinte pasa a ser anterior 
 	}
 	return costo;
+}
+void escribirfile(ofstream &outputFile,vector<int> vect,vector<vector<double> > a){
+	for(int i = 0; i < vect.size(); i++)
+		outputFile<<vect[i]<<" ";
+	outputFile<<endl;
+	outputFile<<"Costo Solucion: "<<calculaValor(vect,a)<<endl;
+	outputFile<<"La solucion tiene un largo de: "<<vect.size()<<endl;
 }
 
 vector<int> simulated(vector<int> vect,double Temp,double converg,vector<vector<double> > ciudades){
@@ -226,13 +286,7 @@ int idcostopromayor(vector<double> a){
 	}
 	return id;
 }
-int aidi(vector<int> a, int id){
-	for (int i = 0; i < a.size(); ++i){
-		if(id==a[i]){
-			return i;
-		}
-	}
-}
+
 map<int,vector<int> > cluster(int numcluster,vector<Pokeparada> b){
 	map<int, vector<int> > clusters;
 	vector<int> a;
@@ -296,10 +350,114 @@ bool recorridocontodoslosclusters(vector<int> a, map<int,vector<int> > b, map<in
 		return false;
 	}
 }
+vector<int> complementosol(vector<int>solucion,vector<int>complemento){
+	if(solucion.size()==0){
+		return complemento;
+	}else{
+		vector<int> a=complemento;
+		vector <int> b=solucion;
+		b.erase(b.begin()+(b.size()-1));
+		for (int i =(b.size()-1); i >= 0; --i){
+			a[b[i]]=-1;
+		}
+		for (int i = a.size()-1; i >= 0; --i){
+			if(a[i]==-1){
+				a.erase(a.begin()+i);
+			}
+		}
+		return a;
+	}
+	
+}
+string fecha(){
+	time_t now=time(0);
+	tm *time=localtime(&now);
+	string dia =to_string(time->tm_mday);
+	string mes = to_string(time->tm_mon+1);
+	string year= to_string(time->tm_year+1900);
+	string hour= to_string(time->tm_hour);
+	string min= to_string(time->tm_min);
+	string seg= to_string(time->tm_sec);
+	string fecha=dia+"M"+mes+"Y"+year+"_H"+hour+"M"+min+"S"+seg;
+	return fecha;
+
+}
+void crearGML(vector<int>nuevasolucion,vector<int>complementosolucion ,char*a,int nodos){
+	ofstream Graphics(strcat(a,"/Grafico.gml"));
+	if (!Graphics.is_open()) { // check for successful opening
+		cout << "Output file could not be opened Terminating" << endl;
+		exit(-1);
+	}
+	Graphics << "graph [ hierarchic 1 directed 1" << endl;
+
+	for ( int j = 0; j < complementosolucion.size(); j++){
+
+		Graphics << "node [ id " << complementosolucion[j]<< " "
+		<< "graphics [ x " << rand()%nodos * 10 << " "
+		<< "y " << rand()%nodos * 10 << " "
+		<< "w 11  h 11 type \"roundrectangle\"] LabelGraphics"
+		<< " " << "[text " << " " << "\"" << complementosolucion[j]
+		<< "\"" << " " << "fontSize 7 ] ]" << endl;
+
+	}
+	if(nuevasolucion.size()!=0){
+		Graphics << "node [ id " << nuevasolucion[0] << " "
+		<< "graphics [ x " << rand()%nodos * 10 << " "
+		<< "y " << rand()%nodos * 10  << " "
+		<< "w 11  h 11 type \"triangle\" fill  \"#008080\"] LabelGraphics"
+		<< " " << "[text " << " " << "\""
+		<< nuevasolucion[0] << "\"" << " " << "fontSize 7 ] ]" << endl;
+		for (int i = 1; i < nuevasolucion.size()-1; i++){
+			Graphics << "node [ id " << nuevasolucion[i] << " "
+			<< "graphics [ x " << rand()%nodos * 10 << " "
+			<< "y " << rand()%nodos * 10  << " "
+			<< "w 11  h 11 type \"triangle\" fill  \"#FF6600\"] LabelGraphics"
+			<< " " << "[text " << " " << "\""
+			<< nuevasolucion[i] << "\"" << " " << "fontSize 7 ] ]" << endl;
+		}
+
+		for (int l = 1; l < nuevasolucion.size(); ++l)
+		{
+			Graphics << "edge [ source " << " " << nuevasolucion[l-1];
+
+			Graphics << " " << "target" << " "
+			<< nuevasolucion[l] << " " << "graphics [ fill \""
+			<< "#5E5E5E" << "\" targetArrow \"standard\" ] ]"
+			<< endl;
+		}
+	}
+	Graphics << "]" << endl;
+	Graphics.close();
+}
+void imprimierbeneficios(vector<Pokeparada>a,vector<int>b,ofstream &outputFile){
+	int beneficios=0;
+	for (int i = 0; i < b.size(); ++i){
+		beneficios=beneficios+a[b[i]].beneficios;
+	}
+	outputFile<<"El camino tiene unos beneficios de: "<<beneficios<<endl;
+}
 
 int main(int argc, char* argv[]){
-		t0=clock();									
-		cout<<"Se esta estudiando el archivo "<<argv[1]<< endl;			// archivo que e leera en ese omento
+		t0=clock();
+		char str[100];
+		char str1[100];
+		strcpy(str,argv[1]);
+		strcat(str,"_");
+		strcat(str,argv[2]);
+		strcat(str,"_");
+		strcat(str,argv[3]);
+		strcat(str,"D");
+		strcat(str,fecha().c_str());
+		cout<<fecha()<<endl;
+		mkdir(str,0777);
+		strcpy(str1,str);
+		ofstream outputFile(strcat(str,"/Soluciones.txt"));		
+		if (!outputFile.is_open()) { // check for successful opening
+			cout << "Outneeeeeelile could not be opened Terminating" << endl;
+		}
+		outputFile<<"Se esta estudiando el archivo "<<argv[1]<< endl;			// archivo que e leera en ese omento
+		outputFile<<"Partiendo del nodo: "<< argv[2]<<endl;
+		outputFile<<"Con un presupuesto maximo de: "<<argv[3]<<endl;
 		string linea,arbol;												// string para lectura archivo
 		int nodos;														// numero de nodos
 		int clusters;													// numero de clusters
@@ -404,6 +562,7 @@ int main(int argc, char* argv[]){
 		cout<<"La solucion tiene un largo de: "<<solucion.size()<<endl;
 		cout<<"---------------------------"<<endl;
 		vector<int> nuevasolucion=structaint(solucion);
+		vector<int> complementosolucion=structaint(pokeparadas);
 		bool verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
 		double T = 3906290;
     //v_cong es el valor de congelacion, que marca
@@ -420,29 +579,24 @@ int main(int argc, char* argv[]){
 		double nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
 		cout<<"solucion simulated aneling"<<endl;
 		printVec(nuevasolucion);
+		escribirfile(outputFile,nuevasolucion,vecotorcosotos);
+		imprimierbeneficios(pokeparadas,nuevasolucion,outputFile);
 		cout<<"Costo solucion: "<<nuevocosto<<endl;
 		cout<<"---------------------------"<<endl;
 		verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
 		vector<double> costospromedios=costosprom(vecotorcosotos,atoi(argv[2]));
 		while(nuevocosto>atof(argv[3])){
 			if(nuevasolucion.size()-1==mapaverificacion.size()){
-				cout<<"mo existe solucion con el costo de viaje pedido"<<endl;
-				t1=clock();
-				double time = (double(t1-t0)/CLOCKS_PER_SEC);
-				cout << "Execution Time: " << time <<" Segundos"<< endl;
-				exit(-1);
+				outputFile<<"\nNo existe solucion con el costo de viaje pedido"<<endl;
+				nuevasolucion.erase(nuevasolucion.begin(),nuevasolucion.begin()+nuevasolucion.size());
+				escribirfile(outputFile,nuevasolucion,vecotorcosotos);
+				imprimierbeneficios(pokeparadas,nuevasolucion,outputFile);
+				break;
 			}
 			int idcos=idcostopromayor(costospromedios);
 			int aidis=aidi(nuevasolucion,idcos);
 			vector <int> aux=nuevasolucion;
 			nuevasolucion.erase(nuevasolucion.begin()+aidis);
-			if(nuevasolucion.size()==2){
-				cout<<"No existe solucion"<<endl;
-				t1=clock();
-				double time = (double(t1-t0)/CLOCKS_PER_SEC);
-				cout << "Execution Time: " << time <<" Segundos"<< endl;
-				exit(-1);
-			}
 			verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
 			while(verdad==0){
 				nuevasolucion=aux;
@@ -453,11 +607,10 @@ int main(int argc, char* argv[]){
 				nuevasolucion.erase(nuevasolucion.begin()+aidis);
 				verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
 				if(nuevasolucion.size()-1==mapaverificacion.size()){
-					cout<<"mo existe solucion con el costo de viaje pedido"<<endl;
-					t1=clock();
-					double time = (double(t1-t0)/CLOCKS_PER_SEC);
-					cout << "Execution Time: " << time <<" Segundos"<< endl;
-					exit(-1);
+					outputFile<<"No existe solucion con el costo de viaje pedido"<<endl;
+					nuevasolucion.erase(nuevasolucion.begin(),nuevasolucion.begin()+nuevasolucion.size());	
+					escribirfile(outputFile,nuevasolucion,vecotorcosotos);
+					imprimierbeneficios(pokeparadas,nuevasolucion,outputFile);
 				}
 			}
 			if(verdad==1){
@@ -465,29 +618,37 @@ int main(int argc, char* argv[]){
 				cout<<"---------------------------"<<endl;
 			}
 			costospromedios[idcos]=0;
+			nuevasolucion=greddy2(nuevasolucion,atoi(argv[2]) ,vecotorcosotos);
 			nuevasolucion=realsimu(nuevasolucion,T,v_cong,vecotorcosotos);
 			printVec(nuevasolucion);
+			escribirfile(outputFile,nuevasolucion,vecotorcosotos);
+			imprimierbeneficios(pokeparadas,nuevasolucion,outputFile);
 			nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
 			cout<<"costo del camino "<<nuevocosto<<endl;
 			cout<<"La solucion tiene un largo de: "<<nuevasolucion.size()<<endl;
-				
+
 		}
 		cout<<"---------------------------"<<endl;
 		cout<<"La solucion optima es: ";
 		printVec(nuevasolucion);
+		escribirfile(outputFile,nuevasolucion,vecotorcosotos);
+		imprimierbeneficios(pokeparadas,nuevasolucion,outputFile);
 		nuevocosto=calculaValor(nuevasolucion,vecotorcosotos);
 		cout<<"Con el siguiente costo en distancia: "<<nuevocosto<<endl;
-		verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
-		if(verdad==0){
-			cout<<"no recorre todos los clusters"<<endl;
-			cout<<"---------------------------"<<endl;
+		printVec(complementosolucion);
+		//verdad=recorridocontodoslosclusters(nuevasolucion,mapaclusters,mapaverificacion);
+		
+		complementosolucion=complementosol(nuevasolucion,complementosolucion);
+		int aux1=0;
+		while(aux1==0){
+			crearGML(nuevasolucion,complementosolucion,str1,nodos);	
+			aux1++;
 		}
-		if(verdad==1){
-			cout<<"recorre todos los clusters"<<endl;
-			cout<<"---------------------------"<<endl;
-		}
+		
 		t1=clock();
 		double time = (double(t1-t0)/CLOCKS_PER_SEC);
 		cout << "Execution Time: " << time <<" Segundos"<< endl;
+		outputFile<<"Execution Time: " << time <<" Segundos"<< endl;
+		outputFile.close();
 		return 0;
 	}

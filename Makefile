@@ -1,4 +1,4 @@
-all: pokego
+all: pokestop
 
 %: %.cc
 	g++ -std=gnu++11 $< -o $@
